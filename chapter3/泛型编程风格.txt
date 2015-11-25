@@ -1,0 +1,55 @@
+STL主要由两种组件构成： 一是容器，包括vector，list，set， map等。另一种组件是用以操作这些容器类的泛型算法，包括find(), sort(), replace(),merge()等等。
+vector和list是序列式容器，序列式容器会依次维护第一个元素，第二个元素。。。直到最后一个元素。我们在序列式容器身上主要进行所谓的迭代操作。map和set这两种容器属于关联式容器。关联式容器可以让我们快速寻找容器中的元素值。
+map是key/value组合。
+set： 仅包含key
+泛型算法： 提供了许多可施行于容器类及数组型别上的操作行为iezhexie算法之所以被称为泛型算法，因为它们和它们想要操作的元素型别无关。泛型算法通过function template技术，达成“与操作对象之型别相互独立”的目的。而达成“与容器无关”的诀窍，就是不要直接在容器身上进行操作。取代方法是：以一对iterators（first，last）来进行迭代操作。
+
+3.1 指针的算术运算
+	假设我们想要编写一个通用的find函数，可用于处理不同的数组（数组元素可以为字符串，也可以为整型），那么我们可以使用指针来完成数组的迭代：
+template <typename elemType>
+elemType *find(const elemType *first, const elemType *last, const elemType &value)
+{
+	if (!fitst || !last) {
+		return 0;
+	}
+	for (; first != last; ++first) {
+		if (*first == value) {
+			return first;
+		}
+	}
+	return 0;
+}
+测试代码文件： findarr.cpp
+但如果我们增加vector的比较呢？我们需要明白对于vector来说，没有所谓的“数组名为地址”一说。所以我们需要编写begin，end函数，用来指代vector的第一个元素和最后一个元素的下一个元素地址。
+template <typename T>
+inline elemType *begin(const vector<elemType> &vec)
+{
+	return vec.empty() ? 0 : &vec[0];
+}
+但是end不知道如何编写--_--
+当我们知道begin，end后，我们可以执行：
+find(begin(svec), end(svec), search_value);
+	但是这种方法对list又无效。因为list的内部实现为链表，每个元素在内存中并不是连续存储的。
+	解决办法是： 在底层指针的行为之上提供一层抽象化机制，取代程序原本的“指针直接操作”方式。
+
+2. 了解Iterators
+	假设first和last为iterator class objects
+while (first != last) {
+	cout << *first << ' ';
+	++first;
+}
+	这就好像把first和last当做指针一样，唯一的差别在于其dereference(*)运算符，!=,++运算符乃是iterator classes内相关的inline函数提供。
+	每个标准容器的begin()返回first，end()返回last。而迭代器的声明语法如下：
+vector<int>::iterator beg = svec.begin();
+则改进后的find的泛型算法如下：
+template<typename IteratorType, typename elemType>
+IteratorType find(IteratorType first, IteratorType last, const elemType &value)
+{
+	for (; first != last; ++first) {
+		if (value == *first) {
+			return first;
+		}
+	}
+	return last;
+}
+具体参考findVec.cpp
