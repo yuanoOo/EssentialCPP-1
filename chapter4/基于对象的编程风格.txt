@@ -200,4 +200,33 @@ public:
 一个实现的triangular参考triangular.cpp
 
 4.6 打造一个Iterator Class
-	
+	参考triangular_iterator.h和main.cpp
+
+4.7 合作关系必须建立在友谊的基础上
+	查看triangular_iterator.h的代码，我们发现friend的存在。
+	代码中，由于Triangular_iterator被声明为Triangular的友元，所以Triangular_iterator的任何函数都可以读取Triangular的任何public/private变量。
+
+4.8 实现一个copy assignment operator
+	默认情况下，当我们将某个class object赋值给另一个：
+	Triangular tri1(8), tri2(8, 9);
+	tri1 = tri2;
+时，class data members会被依次复制过去。但是如果类似Matrix，则需要一个copy constructor和一个copy assignment operator.
+Matrix &Matrix::operator=(const Matrix &rhs)
+{
+	if (this != &rhs) {
+		_row = rhs._row;
+		_col = rhs._col;
+		int elem_cnt = _row * _col;
+
+		delete [] _pmat;
+		_pmat = new double[elem_cnt];
+		for (int ix = 0; ix < elem_cnt; ++ix) {
+			_pmat[ix] = rhs._pmat[ix];
+		}
+	}
+	return *this;
+}
+
+4.9 实现一个function object
+	参考func.cpp
+
