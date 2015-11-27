@@ -77,3 +77,127 @@ Matrix::Matrix(const Matrix &rhs):_row(rhs._row), _col(rhs._col)
 		_pmat[ix] = rhs._pmat[ix];
 	}
 }
+
+4.3 何谓mutable和const
+	假设我们有一个函数：
+int sum(const Triangular &trian)
+{
+	int beg_pos = trian.beg_pos();
+	int length = trian.length();
+	int sum = 0;
+	for (int ix = 0; ix < length; ++ix) {
+		sum += trian.elem(beg_pos + ix);
+	}
+	return sum;
+}
+由于trian是const reference参数，所以必须保证sum函数中不修改trian。这样得保证beg_pos，length等函数存在const形式。
+class Triangular{
+public:
+	Triangular();
+	Triangular(int len);
+	Triangular(int len, int beg_pos);
+	
+	int length() const { return _length; }
+	int beg_pos() const {return _beg_pos;}
+	int elem(int pos) const;
+
+	bool next(int &val);
+	void next_reset() {_next = _beg_pos - 1;}
+private:
+	int _length; //元素数目
+	int _beg_pos; //起始位置
+	int _next;	//下一个迭代目标
+
+	static vector<int> _elems;
+};
+	假设我们编写如下函数：
+class val_class{
+public:
+	val_class(const BigClass &v):_val(v){}
+
+	BigClass &val() const {return _val;}
+private:
+	BigClass _val;
+};
+这样绝对会产生问题：返回一个non-const reference，等于把_val开放出去，允许程序在其它地方加以修改。所以我们得定义两份val:
+const BigClass &val() const {return _val;}
+BigClass &val() {return _val;}
+Mutable Data Member(可变的数据成员)
+	以下是sum的另一种做法：
+int sum(const Triangular &trian)
+{
+	if (!trian.length()) {
+		return 0;
+	}
+	int val, sum = 0;
+	trian.next_reset();
+	while (trian.next(val)) {
+		sum += val;
+	}
+	return sum;
+}
+	因为trian是const reference，所以程序出错。因为next_reset会导致_next被修改。
+	_length和_beg_pos提供了数列的抽象属性，如果我们改变trian的长度起始位置，形同改变其性质，和未改变前的状态不再相同。然而_next只是用来让我们得以实现出iterator机制，它本身不属于数列抽象概念的一环。改变_next的值，从意义上来说，不能视为改变class object的状态，或说不算是破坏了对象的常数性。关键词mutable可以让我们做出这样的声明，只要将_next标识为multable，我们就可以宣称：对_next所做的改变并不会破坏class object的常数性。
+	class Triangular{
+	public:
+		bool next(int &val) const;
+		void next_reset() const {_next = _beg_pos - 1;}
+
+	private:
+		mutable int _next;
+		int _beg_pos;
+		int _length;
+	};
+
+4.4 什么是this指针
+	当我们编写copy函数的时候：
+Triangular tr1(8);
+Triangular tr2(8, 9);
+tr1.copy(tr2);
+	我们可这样编写copy函数：
+Triangular &Triangular::copy(const Triangular &rhs)
+{
+	if (this != &rhs) {
+		_length = rhs._length;
+		_beg_pos = rhs._beg_pos;
+		_next = _rhs._beg_pos - 1;
+	}
+	return *this;
+}
+
+4.5 Static Class Member(静态的类成员)
+	static data members用来表示唯一一份可共享的members。它可以在同型的所有对象中被存取。
+class Triangular{
+public:
+	//
+private:
+	static vector<int> _elems;
+};
+定义如下：
+	vector<int> Triangular::_elems;
+我们也可以指定初值：
+	int Triangular::_initial_size = 8;
+Static Member Function(静态成员函数)
+	考虑以下函数：
+bool Triangular::is_elem(int value)
+{
+	if (!_elems.size() || _elems[_elems.size() - 1] < value)
+		gen_elems_to_value(value);
+	vector<int>::iterator found_it;
+	vector<int>::iterator end_id = _elems.end();
+
+	found_it = find(_elems.begin(), end_it, value);
+	return found_it != end_it;
+}
+	一般情况下，member function必须通过其类的某个对象来调用。这个对象会被绑定至该member function的this指针身上。通过存储于每个对象中的this指针，member function才能够存取存储于每个对象中的non-static data members.
+	然而，上述的is_elem()并不存取任何non-static data member。它的运行和任何对象都没有任何关联，因而应该可以很方便的以一般non-member function的方式调用。
+	所以，我们可以声明static成员函数，代表与任何对象都无瓜葛。
+class Triangular{
+public:
+	static bool is_elem(int);
+	// ...
+};
+一个实现的triangular参考triangular.cpp
+
+4.6 打造一个Iterator Class
+	
