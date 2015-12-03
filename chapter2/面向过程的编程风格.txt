@@ -39,7 +39,7 @@ void swap(int &val1, int &val2)
 	一般来说，除非我们希望在函数内更改参数值，否则在传递内建型别时，不要使用传址方式。传址机制主要是作为传递class objects用的。
 生存空间（scope）及生存范围（extent）
 	除了static例外，函数内定义的对象，只存活于函数执行之际。如果将这些局部对象（local object）的地址返回，会导致执行器错误。如果以传值的方式返回倒正确，因为返回的是复制品。
-	内建型别的对象，如果定义在file scope之内，必定被初始化为0.但如果它们被定义于local scope之内，那么除非程序员指定其初始值，否则不会被初始化。
+	内建型别的对象，如果定义在file scope之外，必定被初始化为0.但如果它们被定义于local scope之内，那么除非程序员指定其初始值，否则不会被初始化。
 动态内存管理
 	我们可以使用new和delete来进行动态的内存管理。
 int *pia = new int[24];
@@ -62,7 +62,7 @@ void bubble_sort(vector<int> &vec, ofstream &ofil)
 	}
 }
 	但此程序无法关闭调试信息。所以我们需要提供默认参数（指针），并令其默认值为0（之所以不是引用，是因为引用必须引用某个对象）
-void bubble_sort(vector<int> &vec, ofstream ×ofil=0)
+void bubble_sort(vector<int> &vec, ofstream *ofil=0)
 {
 	for (int ix = 0; ix < vec.size(); ++ix) {
 		for (int jx = ix + 1; jx < vec.size(); ++jx) {
@@ -132,7 +132,7 @@ bool fibon_elem(int pos, int &elem)
 	elem = (*pseq)[pos - 1];
 	return true;
 }
-	但是如果执行性能不理性，我们可以将函数声明为inline即可。
+	但是如果执行性能不理想，我们可以将函数声明为inline即可。
 
 2.6 提供重载函数
 	重载函数的区分在于：参数的不同。
@@ -195,6 +195,10 @@ int main(void)
  
     return 0;
 }
+这里我们可以这样编写:
+fun(fun1, 12);
+但是不能这样编写: fun(fun2, 12.3);
+因为编译器无法区分float和double.
 
 2.9 设定头文件
 	任何函数都可以有多份声明，但是只会有一份定义。所以声明通常放在头文件中，inline函数是例外，inline定义放在头文件中。
